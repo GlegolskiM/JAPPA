@@ -5,12 +5,19 @@ using UnityEngine;
 
 public class HUDController : MonoBehaviour
 {
+
+    private Camera cam;
+
+    public MonoBehaviour playerMovement;
     public static HUDController instance;
 
-    String[] hiraganaArray = new String[5];
+    String[] hiraganaArray = new String[10];
 
     private int currentHiraganaNum = 1;
 
+    [SerializeField] public GameObject dictionary;
+
+    private bool isUIOpen = false;
 
     private void Awake()
     {
@@ -21,7 +28,56 @@ public class HUDController : MonoBehaviour
         hiraganaArray[2] = "え";
         hiraganaArray[3] = "う";
         hiraganaArray[4] = "お";
+        hiraganaArray[5] = "か";
+        hiraganaArray[6] = "き";
+        hiraganaArray[7] = "け";
+        hiraganaArray[8] = "く";
+        hiraganaArray[9] = "こ";
 
+    }
+
+
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Tab))
+        {
+            isUIOpen = !isUIOpen;
+            dictionary.SetActive(isUIOpen);
+
+            if (isUIOpen)
+            {
+                Cursor.lockState = CursorLockMode.None;
+                Cursor.visible = true;
+                playerMovement.enabled = false;
+                // Optionally disable your player movement or camera script here
+            }
+            else
+            {
+                Cursor.lockState = CursorLockMode.Locked;
+                Cursor.visible = false;
+                playerMovement.enabled = true;
+                // Optionally re-enable your player movement/camera
+            }
+        }
+
+        if (Input.GetMouseButtonDown(0))
+        {
+            int linkIndex = TMP_TextUtilities.FindIntersectingLink(dictionaryText, Input.mousePosition, cam);
+
+            if (linkIndex != -1)
+            {
+                TMP_LinkInfo linkInfo = dictionaryText.textInfo.linkInfo[linkIndex];
+                string linkID = linkInfo.GetLinkID();
+
+                Debug.Log($"You clicked: {linkInfo.GetLinkText()}");
+
+                if (linkInfo.GetLinkText().ToString().Contains(hiraganaToFind.text))
+                {
+                    SoundController.instance.correctChosen();
+                    ChangeHiragana();
+                }
+            }
+        }
     }
 
     [SerializeField] TMP_Text onHoverText;
@@ -30,7 +86,7 @@ public class HUDController : MonoBehaviour
 
     [SerializeField] TMP_Text hiraganaToFind;
 
-    private int time = 20;
+    private int time = 60;
 
     public void EnableInteractionText(string text)
     {
@@ -45,17 +101,50 @@ public class HUDController : MonoBehaviour
 
     internal void AddToDictionary(string message)
     {
-        dictionaryText.text = dictionaryText.text + "\n" + message;
+        if (dictionaryText.text.Contains(message))
+        {
+            //WORD ALREADY IN DICTIONARY
+        }
+        else
+        {
+            dictionaryText.text = dictionaryText.text + "\n" + message;
+        }
+
     }
 
     void CountDown()
     {
+        time = time - 1;
         timerText.text = time.ToString();
+        if (time == 0)
+        {
+            GameStates.instance.gameOver();
+        }
     }
 
     public void ChangeHiragana()
     {
-        hiraganaToFind.text = hiraganaArray[currentHiraganaNum];
-        currentHiraganaNum++;
+        Debug.Log("CURRENT HIRAGANA NUM: "+currentHiraganaNum);
+        if (currentHiraganaNum == 10)
+        {
+            GameStates.instance.youWin();
+            GameStates.instance.gameEnded = true;
+            SoundController.instance.Victory();
+        }
+        else
+        {
+            //set correct hiragana to color
+            string originalText = dictionaryText.text;
+            string targetHiragana = hiraganaToFind.text;
+            string coloredHiragana = "<color=red>"+hiraganaToFind.text+"</color>";
+
+            string updatedText = originalText.Replace(targetHiragana, coloredHiragana);
+
+            dictionaryText.text = updatedText;
+            hiraganaToFind.text = hiraganaArray[currentHiraganaNum];
+            currentHiraganaNum++;
+        }
+
+
     }
 }

@@ -11,34 +11,38 @@ public class PlayerInteraction : MonoBehaviour
     private TextMeshProUGUI dictionaryText;
     private TextMeshProUGUI targetHiragana;
 
-
     bool hasLogged = false;
+
 
     // Update is called once per frame
     void Update()
     {
+        if (GameStates.instance.gameEnded) return;
+
+
         CheckInteraction();
         if (Input.GetKeyUp(KeyCode.E) && currentInteractable != null && !hasLogged)
         {
             currentInteractable.Interact();
             HUDController.instance.DisableInteractionText();
 
-
-            dictionaryText = GameObject.Find("Dictionary").GetComponent<TextMeshProUGUI>();
-            string fullText = dictionaryText.text;
+            String clickedObjectText = currentInteractable.message;
+            //dictionaryText = GameObject.Find("Dictionary").GetComponent<TextMeshProUGUI>();
+            //string fullText = dictionaryText.text;
 
             targetHiragana = GameObject.Find("Hiragana to find").GetComponent<TextMeshProUGUI>();
             string targetWord = targetHiragana.text;
-            Debug.Log("This is the full text: " + fullText);
-            if (fullText.Contains(targetWord))
+            //Debug.Log("This is the full text: " + fullText);
+            if (clickedObjectText.Contains(targetWord))
             {
-                Debug.Log($"Found '{targetWord}' in dictionary!");
-                SoundController.instance.AddToDictionary();
+                Debug.Log($"Found '{targetWord}' in clicked object!");
+                SoundController.instance.correctChosen();
                 HUDController.instance.ChangeHiragana();
             }
             else
             {
                 Debug.Log($"'{targetWord}' not found.");
+                
             }
                 hasLogged = true;
                 Invoke(nameof(ResetLogFlag), 0.2f); // Reset after 0.2 seconds
